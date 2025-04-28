@@ -1,9 +1,12 @@
+// src/App.js
+
 import { useState } from 'react';
 import { SendHorizonal, Bot, User } from 'lucide-react';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 import './App.css';
 
-// ====== Static Data Outside Component ======
+// Static Data
 const sportsData = [
   { id: 'football', name: 'Football', emoji: '⚽', legends: ["Messi", "Ronaldo", "Neymar", "Mbappé"] },
   { id: 'cricket', name: 'Cricket', emoji: '🏏', legends: ["Kohli", "Dhoni", "Sharma", "Smith"] },
@@ -12,7 +15,7 @@ const sportsData = [
   { id: 'more', name: 'More Sports', emoji: '🏆' }
 ];
 
-// Responses mapped
+// Responses
 const responses = {
   football: [
     `Football is the beautiful game! ⚽ Messi has 7 Ballon d'Or awards!`,
@@ -20,7 +23,7 @@ const responses = {
     `The World Cup is the biggest football event!`
   ],
   cricket: [
-    `Cricket is huge in India! 🏏 Kohli is a legend!`,
+    `Cricket is huge in India! 🏏 Dhoni is a legend!`,
     `The IPL is one of the biggest T20 leagues!`,
     `Test cricket shows real patience and skill!`
   ],
@@ -41,11 +44,11 @@ const responses = {
   ]
 };
 
-// ====== Helper Functions ======
+// Helper functions
 const detectSport = (text) => {
   const lower = text.toLowerCase();
   if (lower.includes('football') || /messi|ronaldo|neymar|mbappé/.test(lower)) return 'football';
-  if (lower.includes('cricket') || /kohli|dhoni|sharma|smith/.test(lower)) return 'cricket';
+  if (lower.includes('cricket') || /Dhoni|Kohli|sharma|smith/.test(lower)) return 'cricket';
   if (lower.includes('tennis') || /federer|nadal|djokovic|williams/.test(lower)) return 'tennis';
   if (lower.includes('basketball') || /james|jordan|bryant|curry/.test(lower)) return 'basketball';
   return 'general';
@@ -63,7 +66,7 @@ const getSportEmoji = (sport) => {
   return found ? found.emoji : '🏆';
 };
 
-// ====== React Component ======
+// Main Component
 function App() {
   const [messages, setMessages] = useState([
     { sender: 'bot', text: "Hey Champ! 🌟 Ask me anything about sports!", sport: 'general' }
@@ -71,13 +74,26 @@ function App() {
   const [input, setInput] = useState('');
   const [activeSport, setActiveSport] = useState('all');
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
-    const userMsg = { sender: 'user', text: trimmed };
-    const botMsg = generateBotReply(trimmed);
-    setMessages(prev => [...prev, userMsg, botMsg]);
+
+    const userMsg = {
+      sender: 'user',
+      text: trimmed,
+      sport: detectSport(trimmed)
+    };
+
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
+
+    try {
+      await axios.post('http://localhost:5000/api/chat/message', userMsg);
+      const botMsg = generateBotReply(trimmed);
+      setMessages(prev => [...prev, botMsg]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   return (
@@ -86,9 +102,7 @@ function App() {
         {/* Header */}
         <header className="app-header">
           <div className="header-content">
-            <h1 className="app-title">
-              🏆 SportsTalk AI 🏆
-            </h1>
+            <h1 className="app-title">🏆 SportsTalk AI 🏆</h1>
             <div className="sports-nav">
               {sportsData.map((sport) => (
                 <button
@@ -136,7 +150,7 @@ function App() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Ask about Messi, Kohli, Federer..."
+            placeholder="Ask about Dhoni,Messi, Kohli, Federer..."
             className="message-input"
           />
           <button onClick={handleSend} className="send-btn">
