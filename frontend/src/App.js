@@ -77,24 +77,27 @@ function App() {
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
-
-    const userMsg = {
-      sender: 'user',
-      text: trimmed,
-      sport: detectSport(trimmed)
-    };
-
+  
+    const userMsg = { sender: 'user', text: trimmed };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-
+  
     try {
-      await axios.post('http://localhost:5000/api/chat/message', userMsg);
-      const botMsg = generateBotReply(trimmed);
+      const response = await fetch('http://localhost:5000/api/chat/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trimmed })
+      });
+  
+      const data = await response.json();
+      console.log("Response from server:", data);
+      const botMsg = { sender: 'bot', text: data.bot };
       setMessages(prev => [...prev, botMsg]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
     }
   };
+  
 
   return (
     <div className="app-container">
